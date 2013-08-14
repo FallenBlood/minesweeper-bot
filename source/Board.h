@@ -4,8 +4,10 @@
 #include <vector>
 
 namespace CellType {
-    const int UNCLICKED = -1;
-    const int EMPTY = 0;
+    const int Bomb = -3;
+    const int Flag = -2;
+    const int Unknown = -1;
+    const int Empty = 0;
 }
 
 typedef int CellVal;
@@ -15,7 +17,11 @@ class Cell {
         // Default constructor - for a blank cell
         Cell(int row, int col, CellVal val);
         CellVal getVal() const;
+        bool isBomb() const;
+        bool isFlagged() const;
+        bool isUnknown() const;
         void setVal(CellVal val);
+        char getRepresentation() const;
 
     private:
         int row_;
@@ -29,6 +35,9 @@ class Board {
         Board(int numRows, int numCols);
         void setCell(int row, int col, CellVal val);
         Cell * getCell(int row, int col) const;
+        std::vector<Cell> getAdjacent(Cell * cell) const;
+        void debugPopulate(int numMines);
+        void evaluate();
         void dump() const;
 
     private:
