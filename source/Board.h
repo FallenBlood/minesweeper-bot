@@ -16,6 +16,8 @@ class Cell {
     public:
         // Default constructor - for a blank cell
         Cell(int row, int col, CellVal val);
+        int getRow() const;
+        int getCol() const;
         CellVal getVal() const;
         bool isBomb() const;
         bool isFlagged() const;
@@ -35,10 +37,10 @@ class Board {
         Board(int numRows, int numCols);
         void setCell(int row, int col, CellVal val);
         Cell * getCell(int row, int col) const;
-        std::vector<Cell> getAdjacent(Cell * cell) const;
-        void debugPopulate(int numMines);
+        std::vector<Cell*> getAdjacent(Cell * cell) const;
         void evaluate();
         void dump() const;
+        bool isValidCell(int r, int c) const;
 
     private:
         // Access with board_[row][col]

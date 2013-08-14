@@ -8,6 +8,14 @@
 Cell::Cell(int row, int col, CellVal val) :
     row_(row), col_(col), val_(val) {}
 
+int Cell::getRow() const {
+    return row_;
+}
+
+int Cell::getCol() const {
+    return col_;
+}
+
 CellVal Cell::getVal() const {
     return val_;
 }
@@ -20,16 +28,18 @@ bool Cell::isBomb() const {
     return val_ == CellType::Bomb;
 }
 
-bool isFlagged() const {
+bool Cell::isFlagged() const {
     return val_ == CellType::Flag;
 }
 
-bool isUnknown() const {
+bool Cell::isUnknown() const {
     return val_ == CellType::Unknown;
 }
 
 char Cell::getRepresentation() const {
     switch (val_) {
+        case CellType::Flag:
+            return 'F';
         case CellType::Bomb:
             return 'B';
         case CellType::Unknown:
@@ -65,16 +75,36 @@ Cell * Board::getCell(int row, int col) const {
     return board_[row][col];
 }
 
-std::vector<Cell> getAdjacent(Cell * cell) const {
-    std::vector<Cell> adjacent;
-    // la la la
+bool Board::isValidCell(int r, int c) const {
+    return r > 0 && r < numRows_ && c > 0 && c < numCols_;
+}
+
+std::vector<Cell*> Board::getAdjacent(Cell * cell) const {
+    std::vector<Cell*> adjacent;
+    int r = cell->getRow();
+    int c = cell->getCol();
+    for (int i=-1; i<2; i++) {
+        for (int j=-1; j<2; j++) {
+            if (i == 0 && j == 0) {
+                // don't add current one to adjacent list
+                continue;
+            }
+            if (isValidCell(r+i, c+j)) {
+                adjacent.push_back(getCell(r+i, c+j));
+            }
+        }
+    }
+    return adjacent;
 }
 
 void Board::evaluate() {
     Cell * tmp;
-    for (int col=0; i<numCols_; col++) {
-        for (int row=0; i<numRows_; row++) {
-            
+    std::vector<Cell *> adjacent;
+    for (int col=0; col<numCols_; col++) {
+        for (int row=0; row<numRows_; row++) {
+           tmp = getCell(row, col); 
+           adjacent = getAdjacent(tmp);
+           tmp->setVal(adjacent.size());
         }
     }
 }
