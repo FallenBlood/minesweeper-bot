@@ -24,6 +24,10 @@ void Cell::setVal(CellVal val) {
     val_ = val;
 }
 
+void Cell::flag() {
+    val_ = CellType::Flag;
+}
+
 bool Cell::isBomb() const {
     return val_ == CellType::Bomb;
 }
@@ -34,6 +38,11 @@ bool Cell::isFlagged() const {
 
 bool Cell::isUnknown() const {
     return val_ == CellType::Unknown;
+}
+
+bool Cell::isNumeric() const {
+    // Include 0? Hey, it's a number 
+    return val_ >= 0;
 }
 
 char Cell::getRepresentation() const {
@@ -76,7 +85,7 @@ Cell * Board::getCell(int row, int col) const {
 }
 
 bool Board::isValidCell(int r, int c) const {
-    return r > 0 && r < numRows_ && c > 0 && c < numCols_;
+    return r >= 0 && r < numRows_ && c >= 0 && c < numCols_;
 }
 
 std::vector<Cell*> Board::getAdjacent(Cell * cell) const {
@@ -100,12 +109,35 @@ std::vector<Cell*> Board::getAdjacent(Cell * cell) const {
 void Board::evaluate() {
     Cell * tmp;
     std::vector<Cell *> adjacent;
+    std::vector<Cell *> unknown;
+    std::vector<Cell *> flagged;
     for (int col=0; col<numCols_; col++) {
         for (int row=0; row<numRows_; row++) {
-           tmp = getCell(row, col); 
-           adjacent = getAdjacent(tmp);
-           tmp->setVal(adjacent.size());
-        }
+            unknown.clear();
+            flagged.clear();
+            tmp = getCell(row, col); 
+            if (tmp->isUnknown() || tmp->isFlagged()) {
+                continue;
+            }
+            adjacent = getAdjacent(tmp);
+            for (size_t i=0; i<adjacent.size(); i++) {
+                if (adjacent[i]->isUnknown()) {
+                     unknown.pus_back(adjacent[i]);
+                } else if (adjacent[i].isFlagged()) {
+                     flagged.push_back(adjacent[i]);
+                }
+            }
+            if (unknown.size() == tmp->getVal() - flagged.size()) {
+                // Flag all adjacent squares
+                for (size_t i=0; i<unknown.size(); i++) {
+                    unknown[i]->flag();
+                }
+            } else if (unknown.size() > tmp->getVal()) {
+                for (size_t i=0; i<unknown.size(); i++) {
+                    std::cout << "Click cell at (" << tmp->getRow() << ", " << tmp->getCol() << ")" << std::endl;
+                }
+            }
+         }
     }
 }
 

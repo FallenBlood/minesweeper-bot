@@ -19,9 +19,11 @@ class Cell {
         int getRow() const;
         int getCol() const;
         CellVal getVal() const;
+        void flag();
         bool isBomb() const;
         bool isFlagged() const;
         bool isUnknown() const;
+        bool isNumeric() const;
         void setVal(CellVal val);
         char getRepresentation() const;
 
