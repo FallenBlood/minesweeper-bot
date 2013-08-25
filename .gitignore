@@ -1,0 +1,4 @@
+#Don't let compiled code be pushed#
+*.out
+*.exe
+*.o
