@@ -9,31 +9,6 @@
 CvScalar *bcolor;
 
 /**
- * Loads an image (stored as an IplImage struct) for each
- * filename provided.
- * @param numImages     The number of images to load
- * @param filenames     A list of strings of the iflenames to load
- * @returns             An array of IplImages of the loaded filenames
- */
-IplImage** loadImages(int numImages, char ** fileNames) {
-    IplImage** rv; // the return result
-    int i; // used for looping
-    rv = (IplImage** ) malloc(numImages*sizeof(IplImage*));
-
-    for(i = 0; i < numImages; i++)
-    {
-        rv[i] = cvLoadImage(fileNames[i],CV_LOAD_IMAGE_UNCHANGED);
-        if(rv[i] == NULL)
-        {
-            printf("Error loading %s",fileNames[i]);
-            return NULL;
-        }
-    }
-
-    return rv;
-}
-
-/**
  * Computes the distance between two colors (stored as CvScalars).
  *
  * Given a CvScalar c, you can access the blue, green, and red (BGR) elements
@@ -127,18 +102,18 @@ CvScalar* getAvgColors(IplImage** images, int numImages) {
     return rv;
 }
 
-void startUp(char* argv[])
+void startUp(int size, char* args[])
 {
-    IplImage **blocks = loadImages(10, argv+2);
-    bcolor = getAvgColors(blocks,10);
+    IplImage **blocks = loadImages(size, args);
 }
 
 int main(int argc, char* argv[])
 {
-    startUp(argv);
+    int numImages = argc-2;
+    startUp(numImages, argv+2);
     //Get average color of passed image
-    CvScalar *rv = (CvScalar*) malloc(sizeof(CvScalar));
-    rv = cvAvg(cvLoadImage(argv[1],CV_LOAD_IMAGE_UNCHANGED),NULL);
-    int ci = findClosest(rv, bcolor, 10);
-    printf("Closest is %d",ci);
+//    CvScalar rv;
+ //   rv = cvAvg(cvLoadImage(argv[1],CV_LOAD_IMAGE_UNCHANGED),NULL);
+   // int ci = findClosest(rv, bcolor, 10);
+    printf("Closest is %d\n",1);
 }
