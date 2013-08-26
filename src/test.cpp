@@ -69,6 +69,40 @@ class WindowsMatchingPid
         }
 };
 
+//Another function taken from stackoverflow...
+//If its there might as well use it
+//http://stackoverflow.com/questions/7492529/how-to-simulate-a-mouse-movement
+void mouseClick(int button,Window win)
+{
+    Display *display = XOpenDisplay(NULL);
+    XEvent event;
+    if(display == NULL)
+    {
+        exit(EXIT_FAILURE);
+    }
+    memset(&event, 0x00, sizeof(event));
+    event.type = ButtonPress;
+    event.xbutton.button = button;
+    event.xbutton.same_screen = True;
+    XQueryPointer(display, RootWindow(display, DefaultScreen(display)),
+            &event.xbutton.root, &event.xbutton.window, &event.xbutton.x_root,
+            &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
+    event.xbutton.subwindow = event.xbutton.window;
+    while(event.xbutton.subwindow)
+    {
+        event.xbutton.window = event.xbutton.subwindow;
+        XQueryPointer(display, event.xbutton.window, &event.xbutton.root, &event.xbutton.subwindow,
+                &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
+    }
+    if(XSendEvent(display, PointerWindow, True, 0xfff, &event) == 0) fprintf(stderr, "Error\n");
+    XFlush(display);
+    usleep(100000);
+    event.type = ButtonRelease;
+    event.xbutton.state = 0x100;
+    if(XSendEvent(display, PointerWindow, True, 0xfff, &event) == 0) fprintf(stderr, "Error\n");
+    XFlush(display);
+    XCloseDisplay(display);
+}
 main()
 {
     FILE *fp = popen("ps","r");
@@ -99,21 +133,28 @@ main()
     fclose(fp);
     Display *display = XOpenDisplay(0);
 
+    process = 12703;
     WindowsMatchingPid match(display, XDefaultRootWindow(display), process);
 
     XWindowAttributes xwa;
     //    Print the result.
     const list<Window> &result = match.result();
+    Window win;
     for(list<Window>::const_iterator it = result.begin(); it != result.end(); it++)
     {
         XMoveWindow(display,*it,0,0);
+        win = *it;
+        XGetWindowAttributes(display,*it,&xwa);
+        break;
     }
     Window root = DefaultRootWindow(display);
     int width = XDisplayWidth(display,0)/2;
     int height = XDisplayHeight(display,0)/2;
-    printf("%d %d\n",width,height);
-    XWarpPointer(display,None,root,0,0,0,0,width,height);
+    XWarpPointer(display,None,root,0,0,0,0,100,300);
     XFlush(display);
+    mouseClick(Button3,win);
+    XFlush(display);
+    printf("%d %d\n",xwa.x,xwa.y);
     XCloseDisplay(display);
     return 0;
 }
