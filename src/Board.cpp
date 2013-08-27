@@ -5,7 +5,7 @@
 #include "Board.h"
 
 
-Cell::Cell(int row, int col, CellVal val) :
+Cell::Cell(int row, int col, int val) :
     row_(row), col_(col), val_(val) {}
 
 int Cell::getRow() const {
@@ -20,7 +20,7 @@ CellVal Cell::getVal() const {
     return val_;
 }
 
-void Cell::setVal(CellVal val) {
+void Cell::setVal(int val) {
     val_ = val;
 }
 
@@ -76,7 +76,7 @@ Board::Board(int numRows, int numCols) {
     }
 }
 
-void Board::setCell(int row, int col, CellVal val) {
+void Board::setCell(int row, int col, int val) {
     board_[row][col]->setVal(val);
 }
 
@@ -122,8 +122,8 @@ void Board::evaluate() {
             adjacent = getAdjacent(tmp);
             for (size_t i=0; i<adjacent.size(); i++) {
                 if (adjacent[i]->isUnknown()) {
-                     unknown.pus_back(adjacent[i]);
-                } else if (adjacent[i].isFlagged()) {
+                     unknown.push_back(adjacent[i]);
+                } else if (adjacent[i]->isFlagged()) {
                      flagged.push_back(adjacent[i]);
                 }
             }

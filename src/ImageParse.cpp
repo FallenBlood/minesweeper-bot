@@ -10,11 +10,15 @@
 #include <opencv/cv.h>
 #include <opencv/cvaux.h>
 #include <opencv/highgui.h>
+#include "Board.h"
+#include "MouseClick.h"
 
 //Only load blocks once since it will take a long time to do each time
 CvScalar *bcolor;
 int horiz,vert;
 int width,height;
+Board* board = new Board(16,31);
+IplImage* blank = getState();
 /**
  * Computes the distance between two colors (stored as CvScalars).
  *
@@ -77,7 +81,7 @@ IplImage ** getSubImages(IplImage* src, int numColumns, int numRows) {
     // Compute the cell width and the cell height 
     cellWidth = s.width / numColumns; 
     cellHeight = s.height / numRows; 
-
+    printf("%i %i\n",cellWidth,cellHeight);
     // Allocate an array of IplImage* s 
     rv = (IplImage**) malloc(sizeof(IplImage*) * numColumns * numRows); 
     if (rv == NULL) { 
@@ -255,24 +259,8 @@ IplImage* XImage2OpenCVImage(XImage& _xImage, Display& _xDisplay, Screen& _xScre
     }
     return ocvImage;
 }
-/*
-   int main(int argc, char* argv[])
-   {
-//42 w
-//206 h
-//13x blocks
 
-int numImages = argc-2;
-startUp(numImages, argv+2);
-//Get average color of passed image
-CvScalar rv;
-rv = cvAvg(cvLoadImage(argv[1],CV_LOAD_IMAGE_UNCHANGED),NULL);
-int ci = findClosest(rv, bcolor, argc-2);
-printf("Closest is %d\n",ci);
-
-}*/ 
-int main(int argc, char** argv) {
-    // X resources
+void setWindowSize() {
     Display* display = NULL;
     Screen* screen = NULL;
     XImage* xImageShot = NULL;
@@ -282,56 +270,137 @@ int main(int argc, char** argv) {
     screen = DefaultScreenOfDisplay(display);
     int startX = 40, startY = 200; // The starting pixels / offset (x,y) to take the screenshot from
     unsigned int widthX = 1000 , heightY = 520; // The size of the area (width,height) to take a screenshot of
-
     xImageShot = XGetImage(display, DefaultRootWindow(display), startX, startY, widthX, heightY, AllPlanes, ZPixmap);
+    // Check for bad null pointers
+    if (xImageShot == NULL || display == NULL || screen == NULL) {
+        printf("Error: Screen is null?\n");
+        return;
+    }
+    screenShot = XImage2OpenCVImage(*xImageShot, *display, *screen);
+    CvMat *mat = cvCreateMat(screenShot->height,screenShot->width,CV_32FC3);
+    cvConvert(screenShot,mat);
+    IplImage* whitePix = cvLoadImage("../tiles/zblank.png",CV_LOAD_IMAGE_UNCHANGED);
+    CvMat *mat2 = cvCreateMat(whitePix->height,whitePix->width,CV_32FC3);
+    cvConvert(whitePix,mat2);
+
+    //Find first white pixel, indicating top left corner or first actual mine field
+    int x,y;
+    for(int i=0; i<10; i++)
+    {
+        for(int j=0; j<10; j++)
+        {
+            CvScalar scal = cvGet2D(mat,i,j);
+            CvScalar scal2 = cvGet2D(mat2,0,0);
+            if(scal.val[0] == scal2.val[0] && scal.val[1] == scal2.val[1] && scal.val[2] == scal2.val[2])
+            {
+                x = i-4;
+                y = j+1;
+                i = 10;
+                j = 10;
+                break;
+            }
+        }
+    }
+
+    horiz = 40 + x;
+    vert = 200 + y;
+    width = 992;
+    height = 512;
+}
+// X resources
+IplImage* getState()
+{
+
+    Display* display = NULL;
+    Screen* screen = NULL;
+    XImage* xImageShot = NULL;
+    IplImage* screenShot;
+    XColor col;
+    display = XOpenDisplay(NULL); // Open first (-best) display
+    screen = DefaultScreenOfDisplay(display);
+    xImageShot = XGetImage(display, DefaultRootWindow(display), 0, 0, 1200, 800, AllPlanes, ZPixmap);
     // Check for bad null pointers
     if (xImageShot != NULL && display != NULL && screen != NULL) {
         screenShot = XImage2OpenCVImage(*xImageShot, *display, *screen);
-        CvMat *mat = cvCreateMat(screenShot->height,screenShot->width,CV_32FC3);
-        cvConvert(screenShot,mat);
-        IplImage* whitePix = cvLoadImage("../tiles/zblank.png",CV_LOAD_IMAGE_UNCHANGED);
-        CvMat *mat2 = cvCreateMat(whitePix->height,whitePix->width,CV_32FC3);
-        cvConvert(whitePix,mat2);
-        //Find first white pixel, indicating top left corner or first actual mine field
-        int x,y;
-        for(int i=0; i<10; i++)
-        {
-            for(int j=0; j<10; j++)
-            {
-                CvScalar scal = cvGet2D(mat,i,j);
-                CvScalar scal2 = cvGet2D(mat2,0,0);
-                if(scal.val[0] == scal2.val[0] && scal.val[1] == scal2.val[1] && scal.val[2] == scal2.val[2])
-                {
-                    x = i-4;
-                    y = j+3;
-                    i = 10;
-                    j = 10;
-                    break;
-                }
-            }
-        }
-        
-        horiz = 40 + x;
-        vert = 200 + y;
-        width = 992;
-        height = 512;
-
-        cvSetImageROI(screenShot, cvRect(x,y,992,512));
+        cvSetImageROI(screenShot, cvRect(horiz,vert,width,height));
         IplImage *tmp = cvCreateImage(cvGetSize(screenShot),screenShot->depth,screenShot->nChannels);
         cvCopy(screenShot,tmp,NULL);
         cvResetImageROI(screenShot);
         screenShot = cvCloneImage(tmp);
-        cvShowImage("test", screenShot);
-
-        //Wait until user interacts
-        while (cvWaitKey(50) == -1) {}
-
-            // Always clean up your mess
-            XDestroyImage(xImageShot);
-            XCloseDisplay(display);
-            cvReleaseImage(&screenShot);
-        } else {
-            printf ("Error taking screenshot!\n");
-        }
-        return 0;
+        // Always clean up your mess
+        XDestroyImage(xImageShot);
+        XCloseDisplay(display);
+    } else {
+        printf ("Error taking screenshot!\n");
     }
+    return screenShot;
+}
+
+void updateBoard(int numColors)
+{
+    IplImage* state = getState();
+    IplImage** subImages = getSubImages(state,31,16);
+    CvScalar* avgs = getAvgColors(subImages,31*16);
+    for(int i = 0; i < 16; i++)
+    {
+        for(int j = 0; j < 31; j++)
+        {
+            int index = findClosest(avgs[(31*i)+j],bcolor,numColors);
+            board->setCell(i,j,index);
+        }
+    }
+    if(state 
+    for(int i = 0; i < 16; i++)
+    {
+        for(int j = 0; j < 31; j++)
+            printf("%d ",board->getCell(i,j)->getVal());
+        printf("\n");
+    }
+}
+
+
+int main(int argc, char* argv[])
+{
+    int numImages = argc-1;
+    startUp(numImages, argv+1);
+    setWindowSize();
+    mouseMove(horiz+(width/2),vert+(height/2),true);
+    updateBoard(numImages);
+    bool canDoSafe = true;
+    while(canDoSafe)
+    {
+        for(int i = 0; i < 16; i++)
+        {
+            for(int j = 0; j < 31; j++)
+            {
+                printf("%d %d %d\n",i,j,board->getCell(i,j)->getVal());
+                if(board->getCell(i,j)->getVal() < 8)
+                {
+                    std::vector<Cell*> surround = board->getAdjacent(board->getCell(i,j));
+                    int count = 0;
+                    for(std::vector<Cell*>::iterator it = surround.begin(); it!=surround.end(); ++it)
+                    {
+                        printf("%d\n",(*it)->getVal());
+                        if((*it)->getVal() == 8 || (*it)->getVal() == 10)
+                        {
+                            count++;
+                        }
+                    }
+                    if(count == board->getCell(i,j)->getVal()+1)
+                    {
+                        for(std::vector<Cell*>::iterator it = surround.begin(); it!=surround.end(); ++it)
+                        {
+                            if((*it)->getVal() == 8)
+                            {
+                                mouseMove(horiz+((*it)->getCol()*32)+32,vert+((*it)->getRow()*32)+32,false);
+                            }
+                        }
+                        updateBoard(numImages);
+                    }
+                }
+            }
+        }
+    }
+}            
+
+
