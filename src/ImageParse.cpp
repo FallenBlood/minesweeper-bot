@@ -18,7 +18,6 @@ CvScalar *bcolor;
 int horiz,vert;
 int width,height;
 Board* board = new Board(16,31);
-IplImage* blank = getState();
 /**
  * Computes the distance between two colors (stored as CvScalars).
  *
@@ -81,7 +80,6 @@ IplImage ** getSubImages(IplImage* src, int numColumns, int numRows) {
     // Compute the cell width and the cell height 
     cellWidth = s.width / numColumns; 
     cellHeight = s.height / numRows; 
-    printf("%i %i\n",cellWidth,cellHeight);
     // Allocate an array of IplImage* s 
     rv = (IplImage**) malloc(sizeof(IplImage*) * numColumns * numRows); 
     if (rv == NULL) { 
@@ -349,13 +347,6 @@ void updateBoard(int numColors)
             board->setCell(i,j,index);
         }
     }
-    if(state 
-    for(int i = 0; i < 16; i++)
-    {
-        for(int j = 0; j < 31; j++)
-            printf("%d ",board->getCell(i,j)->getVal());
-        printf("\n");
-    }
 }
 
 
@@ -373,17 +364,21 @@ int main(int argc, char* argv[])
         {
             for(int j = 0; j < 31; j++)
             {
-                printf("%d %d %d\n",i,j,board->getCell(i,j)->getVal());
                 if(board->getCell(i,j)->getVal() < 8)
                 {
                     std::vector<Cell*> surround = board->getAdjacent(board->getCell(i,j));
                     int count = 0;
+                    int count2 = 0;
                     for(std::vector<Cell*>::iterator it = surround.begin(); it!=surround.end(); ++it)
                     {
-                        printf("%d\n",(*it)->getVal());
-                        if((*it)->getVal() == 8 || (*it)->getVal() == 10)
+                        if((*it)->getVal() == 8)
                         {
                             count++;
+                        }
+                        else if((*it)->getVal() == 10)
+                        {
+                            count++;
+                            count2++;
                         }
                     }
                     if(count == board->getCell(i,j)->getVal()+1)
@@ -393,13 +388,63 @@ int main(int argc, char* argv[])
                             if((*it)->getVal() == 8)
                             {
                                 mouseMove(horiz+((*it)->getCol()*32)+32,vert+((*it)->getRow()*32)+32,false);
+                                (*it)->setVal(10);
                             }
                         }
                         updateBoard(numImages);
                     }
+                    else if(count2 == board->getCell(i,j)->getVal()+1)
+                    {
+                        mouseMove(horiz+(j*32)+32,vert+(i*32)+32,true);
+                    }
                 }
             }
         }
+
+        updateBoard(numImages);
+
+        for(int i = 15; i >=0; i--)
+        {
+            for(int j = 30; j >= 0; j--)
+            {
+                if(board->getCell(i,j)->getVal() < 8)
+                {
+                    std::vector<Cell*> surround = board->getAdjacent(board->getCell(i,j));
+                    int count = 0;
+                    int count2 = 0;
+                    for(std::vector<Cell*>::iterator it = surround.begin(); it!=surround.end(); ++it)
+                    {
+                        if((*it)->getVal() == 8)
+                        {
+                            count++;
+                        }
+                        else if((*it)->getVal() == 10)
+                        {
+                            count++;
+                            count2++;
+                        }
+                    }
+                    if(count == board->getCell(i,j)->getVal()+1)
+                    {
+                        for(std::vector<Cell*>::iterator it = surround.begin(); it!=surround.end(); ++it)
+                        {
+                            if((*it)->getVal() == 8)
+                            {
+                                mouseMove(horiz+((*it)->getCol()*32)+32,vert+((*it)->getRow()*32)+32,false);
+                                (*it)->setVal(10);
+                            }
+                        }
+                        updateBoard(numImages);
+                    }
+                    else if(count2 == board->getCell(i,j)->getVal()+1)
+                    {
+                        mouseMove(horiz+(j*32)+32,vert+(i*32)+32,true);
+                    }
+                }
+            }
+        }
+
+        updateBoard(numImages);
     }
 }            
 

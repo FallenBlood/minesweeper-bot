@@ -30,7 +30,7 @@ void mouseClick(int button)
     }
     if(XSendEvent(display, PointerWindow, True, 0xfff, &event) == 0) fprintf(stderr, "Error\n");
     XFlush(display);
-    usleep(100000);
+   // usleep(1000);
     event.type = ButtonRelease;
     event.xbutton.state = 0x100;
     if(XSendEvent(display, PointerWindow, True, 0xfff, &event) == 0) fprintf(stderr, "Error\n");
